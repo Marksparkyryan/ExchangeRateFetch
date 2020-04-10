@@ -7,6 +7,7 @@ const swapButton = document.getElementById('swap');
 const updated = document.getElementById('updated');
 const delta = 60000;
 
+// Render options of select lists
 function renderOptionsLists() {
   let list = getDataFromStorage();
   let options = Object.keys(list.rates).map(code => {
@@ -18,7 +19,6 @@ function renderOptionsLists() {
 
 // Get date ranges for chart data
 const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate()
-
 const addMonths = (input, months) => {
   const date = new Date(input)
   date.setDate(1)
@@ -56,21 +56,21 @@ function fetchData() {
     })
 }
 
-// Try to get data from cache, update data in cache if need be
+// Try to get data from cache, update data in cache via api if need be
 function getDataFromStorage() {
   let now = new Date().getTime();
-  if (!localStorage.getItem(`${currencyElementOne.value}Data`) || localStorage.getItem(`${currencyElementOne.value}Timestamp`) < now) {
+  if (localStorage.getItem(`${currencyElementOne.value}Data`) === null || localStorage.getItem(`${currencyElementOne.value}Timestamp`) < now) {
       fetchData();
     } else {
       console.log(`fetching from local storage`)
     }
-  return JSON.parse(localStorage.getItem(`${currencyElementOne.value}Data`)); 
-  }
+  return JSON.parse(localStorage.getItem(`${currencyElementOne.value}Data`))
+  };
 
-// Try to get CHART data from cache, update data in cache if need be
+// Try to get CHART data from cache, update data in cache via api if need be
 function getChartDataFromStorage() {
   let now = new Date();
-  if (!localStorage.getItem(`${currencyElementOne.value}ChartData`) || localStorage.getItem(`${currencyElementOne.value}ChartTimestamp`) !== now) {
+  if (localStorage.getItem(`${currencyElementOne.value}ChartData`) === null || localStorage.getItem(`${currencyElementOne.value}ChartTimestamp`) !== now) {
       fetchChartData();
     } else {
       console.log(`fetching chart data from local storage`)
@@ -78,19 +78,18 @@ function getChartDataFromStorage() {
   return JSON.parse(localStorage.getItem(`${currencyElementOne.value}ChartData`)); 
   }
 
-// Get exchange rate and render currency values
+// Get exchange rate from storage and render currency values
 function calculate() {
   let now = new Date().getTime();
   const currencyOneValue = currencyElementOne.value;
   const currencyTwoValue = currencyElementTwo.value;
-  let rate = getDataFromStorage().rates[currencyTwoValue];
-
-  console.log("calculating...");
+  let rate = new getDataFromStorage().rates[currencyTwoValue];
+  
   rateElement.innerText = `1 ${currencyOneValue} = ${rate} ${currencyTwoValue}`;
   amountElementTwo.value = (amountElementOne.value * rate).toFixed(2);
-  let time = localStorage.getItem(`${currencyOneValue}Timestamp`) - delta
+  let time = localStorage.getItem(`${currencyOneValue}Timestamp`) - delta;
   updated.innerText = `rates updated ${(now - time)/1000} seconds ago`;
-  console.log("done")
+  console.log("done");
 }
 
 // Swap currency codes
@@ -100,11 +99,6 @@ function swap() {
   currencyElementOne.value = currencyElementTwo.value;
   currencyElementTwo.value = temp;
 }
-
-// Initialize
-renderOptionsLists();
-calculate();
-
 
 // Chart JS
 function getKeys() {
@@ -145,6 +139,10 @@ function removeData(chart) {
   chart.update();
 }
 
+// Initialize
+calculate()
+renderOptionsLists()
+
 var ctx = document.getElementById('myChart').getContext('2d');
 var myChart = new Chart(ctx, {
   type: 'line',
@@ -161,7 +159,7 @@ var myChart = new Chart(ctx, {
   options: {
       layout: {
         padding: {
-          right: 30,
+          right: 20,
           left: 5,
           top: 10,
           bottom: 10,
@@ -201,10 +199,12 @@ var myChart = new Chart(ctx, {
   }
 });
 
+// Initialize chart
+addData(myChart, getValues)
+
 // Event listeners
 currencyElementOne.addEventListener('change', () => {
-  getDataFromStorage();
-  getChartDataFromStorage();
+  calculate();
   removeData(myChart);
   addData(myChart, getValues);
 });
@@ -212,7 +212,6 @@ amountElementOne.addEventListener('input', () => {
   calculate();
 });
 currencyElementTwo.addEventListener('change', () => {
-  getChartDataFromStorage();
   calculate();
   removeData(myChart);
   addData(myChart, getValues);
@@ -220,8 +219,7 @@ currencyElementTwo.addEventListener('change', () => {
 amountElementTwo.addEventListener('input', calculate);
 swapButton.addEventListener('click', () => {
   swap();
-  getDataFromStorage();
-  getChartDataFromStorage();
+  calculate();
   removeData(myChart);
   addData(myChart, getValues);
 });

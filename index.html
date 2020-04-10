@@ -2,32 +2,36 @@
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+  <!--<![endif]-->
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Excahnge Rate Calculator</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <img src="img/money.png" alt="" class="money-img">
+    <img src="img/money.png" alt="" class="money-img" />
     <h1>Exchange Rate Calculator</h1>
     <p>Choose the currency and the amount to fetch the exchange rate</p>
     <div class="container">
-
+      <!-- ChartJS container -->
       <div class="chart">
-          <canvas id="myChart"></canvas>
+        <canvas id="myChart"></canvas>
       </div>
 
+      <!-- Currency one container -->
       <div class="currency">
         <select id="currency-one">
-            <option value="CAD" selected>CAD</option>
+          <option value="CAD" selected>CAD</option>
         </select>
-        <input type="number" id="amount-one" placeholder="0" value="1">
+        <input type="number" id="amount-one" placeholder="0" value="1" />
       </div>
 
+      <!-- Swap container -->
       <div class="swap-rate-container">
         <button class="btn" id="swap">
           Swap
@@ -35,12 +39,13 @@
         <div class="rate" id="rate"></div>
       </div>
 
+      <!-- Currency two container -->
       <div class="currency">
-          <select id="currency-two">
-              <option value="USD" selected>USD</option>
-          </select>
-          <input type="number" id="amount-two" placeholder="0">
-        </div>
+        <select id="currency-two">
+          <option value="USD" selected>USD</option>
+        </select>
+        <input type="number" id="amount-two" placeholder="0" />
+      </div>
     </div>
     <small id="updated"></small>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
