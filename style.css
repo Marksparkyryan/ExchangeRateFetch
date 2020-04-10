@@ -20,6 +20,7 @@ body {
 
 h1 {
   color: var(--primary-color);
+  text-align: center;
 }
 
 p {
@@ -47,7 +48,7 @@ p {
 }
 
 .currency select {
-  padding: 10px 20px 10px 10px;
+  padding: 10px 25px 10px 10px;
   -moz-appearance: none;
   -webkit-appearance: none;
   appearance: none;
@@ -86,6 +87,10 @@ select:focus, inout:focus, button:focus {
 #updated {
   font-style: italic;
   color: lightgray;
+}
+
+#myChart {
+  margin-top: 10px;
 }
 
 @media (max-width: 600px) {
