@@ -6,6 +6,8 @@ const rateElement = document.getElementById('rate');
 const swapButton = document.getElementById('swap');
 const updated = document.getElementById('updated');
 const delta = 60000;
+let today = new Date();
+let now = new Date().getTime();
 
 // Render options of select lists
 function renderOptionsLists() {
@@ -29,48 +31,41 @@ const addMonths = (input, months) => {
 
 // Fetch chart json data
 function fetchChartData() {
-  let now = new Date();
-  const today = new Date();
-  const start = addMonths(today, -7);
+  console.log(`fetching ${currencyElementOne.value} chart data from api.exchangeratesapi.io`)
+  const start = addMonths(today, -9);
   const end = addMonths(today, 0);
-  const currencyOneValue = currencyElementOne.value;
-  fetch(`https://api.exchangeratesapi.io/history?start_at=${start}&end_at=${end}&base=${currencyOneValue}`)
+  fetch(`https://api.exchangeratesapi.io/history?start_at=${start}&end_at=${end}&base=${currencyElementOne.value}`)
     .then(res => res.json())
     .then(chartJson => {
-      localStorage.setItem(`${currencyOneValue}ChartData`, JSON.stringify(chartJson));
-      localStorage.setItem(`${currencyOneValue}ChartTimestamp`, now);
+      localStorage.setItem(`${currencyElementOne.value}ChartData`, JSON.stringify(chartJson));
+      localStorage.setItem(`${currencyElementOne.value}ChartTimestamp`, today);
     })
+    .then(console.log(`finished writing ${currencyElementOne.value} chart data to local`))
 }
 
 // Fetch json data from api resource with base currency
-function fetchData() {
-  let now = new Date().getTime();
-  let currencyOneValue = currencyElementOne.value;
-  
-  console.log(`fetching ${currencyElementOne.value} from api.exchangeratesapi.io`)
-  fetch(`https://api.exchangeratesapi.io/latest?base=${currencyOneValue}`)
+const fetchData = () => fetch(`https://api.exchangeratesapi.io/latest?base=${currencyElementOne.value}`)
     .then(res => res.json())
     .then(myJson => {
-      localStorage.setItem(`${currencyOneValue}Data`, JSON.stringify(myJson));
-      localStorage.setItem(`${currencyOneValue}Timestamp`, now+delta);
+      localStorage.setItem(`${currencyElementOne.value}Data`, JSON.stringify(myJson));
+      localStorage.setItem(`${currencyElementOne.value}Timestamp`, now+delta);
     })
-}
+    .then(console.log(`finished writing ${currencyElementOne.value} number data to local`))
 
 // Try to get data from cache, update data in cache via api if need be
 function getDataFromStorage() {
-  let now = new Date().getTime();
   if (localStorage.getItem(`${currencyElementOne.value}Data`) === null || localStorage.getItem(`${currencyElementOne.value}Timestamp`) < now) {
-      fetchData();
+    console.log(`fetching ${currencyElementOne.value} number data from api.exchangeratesapi.io`);
+    fetchData();
     } else {
-      console.log(`fetching from local storage`)
+      console.log(`fetching number data from local storage`)
     }
-  return JSON.parse(localStorage.getItem(`${currencyElementOne.value}Data`))
+  return JSON.parse(localStorage.getItem(`${currencyElementOne.value}Data`)); 
   };
 
 // Try to get CHART data from cache, update data in cache via api if need be
 function getChartDataFromStorage() {
-  let now = new Date();
-  if (localStorage.getItem(`${currencyElementOne.value}ChartData`) === null || localStorage.getItem(`${currencyElementOne.value}ChartTimestamp`) !== now) {
+  if (localStorage.getItem(`${currencyElementOne.value}ChartData`) === null || localStorage.getItem(`${currencyElementOne.value}ChartTimestamp`) !== today) {
       fetchChartData();
     } else {
       console.log(`fetching chart data from local storage`)
@@ -80,16 +75,13 @@ function getChartDataFromStorage() {
 
 // Get exchange rate from storage and render currency values
 function calculate() {
-  let now = new Date().getTime();
-  const currencyOneValue = currencyElementOne.value;
-  const currencyTwoValue = currencyElementTwo.value;
-  let rate = new getDataFromStorage().rates[currencyTwoValue];
-  
-  rateElement.innerText = `1 ${currencyOneValue} = ${rate} ${currencyTwoValue}`;
+  console.log("entering calculate"); 
+  let rate = JSON.parse(localStorage.getItem(`${currencyElementOne.value}Data`)).rates[currencyElementTwo.value];
+  rateElement.innerText = `1 ${currencyElementOne.value} = ${rate.toFixed(4)} ${currencyElementTwo.value}`;
   amountElementTwo.value = (amountElementOne.value * rate).toFixed(2);
-  let time = localStorage.getItem(`${currencyOneValue}Timestamp`) - delta;
+  let time = localStorage.getItem(`${currencyElementOne.value}Timestamp`) - delta;
   updated.innerText = `rates updated ${(now - time)/1000} seconds ago`;
-  console.log("done");
+  console.log("exiting calculate");
 }
 
 // Swap currency codes
@@ -140,8 +132,8 @@ function removeData(chart) {
 }
 
 // Initialize
-calculate()
 renderOptionsLists()
+calculate();
 
 var ctx = document.getElementById('myChart').getContext('2d');
 var myChart = new Chart(ctx, {
@@ -200,11 +192,14 @@ var myChart = new Chart(ctx, {
 });
 
 // Initialize chart
+getChartDataFromStorage()
 addData(myChart, getValues)
 
 // Event listeners
 currencyElementOne.addEventListener('change', () => {
+  getDataFromStorage();
   calculate();
+  getChartDataFromStorage();
   removeData(myChart);
   addData(myChart, getValues);
 });
@@ -212,14 +207,18 @@ amountElementOne.addEventListener('input', () => {
   calculate();
 });
 currencyElementTwo.addEventListener('change', () => {
+  getDataFromStorage();
   calculate();
+  getChartDataFromStorage();
   removeData(myChart);
   addData(myChart, getValues);
 });
 amountElementTwo.addEventListener('input', calculate);
 swapButton.addEventListener('click', () => {
   swap();
+  getDataFromStorage()
   calculate();
+  getChartDataFromStorage();
   removeData(myChart);
   addData(myChart, getValues);
 });
