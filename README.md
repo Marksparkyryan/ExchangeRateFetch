@@ -1,6 +1,6 @@
 ## Exchange Rate Fetch
 
-[See project here] (https://marksparkyryan.github.io/ExchangeRateFetch/)
+https://marksparkyryan.github.io/ExchangeRateFetch/
 
 This was a project in Brad Traversy's JS course. Users can select two currencies to see the latest exchange rate. 
 
