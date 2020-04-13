@@ -47,6 +47,10 @@ p {
   justify-content: space-between;
 }
 
+.currency.one {
+  padding-top: 25px;
+}
+
 .currency select {
   padding: 10px 25px 10px 10px;
   -moz-appearance: none;

@@ -5,18 +5,27 @@ const amountElementTwo = document.getElementById('amount-two');
 const rateElement = document.getElementById('rate');
 const swapButton = document.getElementById('swap');
 const updated = document.getElementById('updated');
-const delta = 60000;
-let today = new Date();
-let now = new Date().getTime();
+const delta = 900000;
+
 
 // Render options of select lists
-function renderOptionsLists() {
-  let list = getDataFromStorage();
-  let options = Object.keys(list.rates).map(code => {
+async function renderOptionsLists() {
+  let list = await getDataFromStorage();
+  let sorted = Object.keys(list.rates).sort()
+  let options1 = sorted.map(code => {
+    if (code === "CAD") {
+      return `<option value="${code}" selected>${code}</option>`;
+    }
     return `<option value="${code}">${code}</option>`;
   })
-  currencyElementOne.innerHTML = options;
-  currencyElementTwo.innerHTML = options;
+  let options2 = sorted.map(code => {
+    if (code === "USD") {
+      return `<option value="${code}" selected>${code}</option>`;
+    }
+    return `<option value="${code}">${code}</option>`;
+  })
+  currencyElementOne.innerHTML = options1;
+  currencyElementTwo.innerHTML = options2;
 }
 
 // Get date ranges for chart data
@@ -30,59 +39,75 @@ const addMonths = (input, months) => {
 }
 
 // Fetch chart json data
-function fetchChartData() {
+async function fetchChartData() {
+  let today = new Date();
   console.log(`fetching ${currencyElementOne.value} chart data from api.exchangeratesapi.io`)
   const start = addMonths(today, -9);
   const end = addMonths(today, 0);
-  fetch(`https://api.exchangeratesapi.io/history?start_at=${start}&end_at=${end}&base=${currencyElementOne.value}`)
+  await (fetch(`https://api.exchangeratesapi.io/history?start_at=${start}&end_at=${end}&base=${currencyElementOne.value}`)
     .then(res => res.json())
     .then(chartJson => {
       localStorage.setItem(`${currencyElementOne.value}ChartData`, JSON.stringify(chartJson));
       localStorage.setItem(`${currencyElementOne.value}ChartTimestamp`, today);
     })
-    .then(console.log(`finished writing ${currencyElementOne.value} chart data to local`))
+    .then(console.log(`finished writing ${currencyElementOne.value} chart data to local`)))
 }
 
 // Fetch json data from api resource with base currency
-const fetchData = () => fetch(`https://api.exchangeratesapi.io/latest?base=${currencyElementOne.value}`)
+async function fetchData() {
+  now = new Date().getTime();
+  await (fetch(`https://api.exchangeratesapi.io/latest?base=${currencyElementOne.value}`)
     .then(res => res.json())
     .then(myJson => {
       localStorage.setItem(`${currencyElementOne.value}Data`, JSON.stringify(myJson));
       localStorage.setItem(`${currencyElementOne.value}Timestamp`, now+delta);
     })
-    .then(console.log(`finished writing ${currencyElementOne.value} number data to local`))
+    .then(console.log(`finished writing ${currencyElementOne.value} number data to local`)))
+  }
 
 // Try to get data from cache, update data in cache via api if need be
-function getDataFromStorage() {
+async function getDataFromStorage() {
+  now = new Date().getTime();
   if (localStorage.getItem(`${currencyElementOne.value}Data`) === null || localStorage.getItem(`${currencyElementOne.value}Timestamp`) < now) {
     console.log(`fetching ${currencyElementOne.value} number data from api.exchangeratesapi.io`);
-    fetchData();
+    await fetchData();
     } else {
       console.log(`fetching number data from local storage`)
     }
-  return JSON.parse(localStorage.getItem(`${currencyElementOne.value}Data`)); 
+  let numberData = await localStorage.getItem(`${currencyElementOne.value}Data`);
+  return JSON.parse(numberData);
   };
 
 // Try to get CHART data from cache, update data in cache via api if need be
-function getChartDataFromStorage() {
-  if (localStorage.getItem(`${currencyElementOne.value}ChartData`) === null || localStorage.getItem(`${currencyElementOne.value}ChartTimestamp`) !== today) {
-      fetchChartData();
+async function getChartDataFromStorage() {
+  let today = new Date();
+  if (localStorage.getItem(`${currencyElementOne.value}ChartData`) === null || localStorage.getItem(`${currencyElementOne.value}ChartTimestamp`) < today) {
+      await fetchChartData();
     } else {
       console.log(`fetching chart data from local storage`)
     }
-  return JSON.parse(localStorage.getItem(`${currencyElementOne.value}ChartData`)); 
-  }
+  let chartData = await localStorage.getItem(`${currencyElementOne.value}ChartData`);
+  let chartJson = await JSON.parse(chartData);
+  return chartJson;
+  } 
 
 // Get exchange rate from storage and render currency values
-function calculate() {
-  console.log("entering calculate"); 
-  let rate = JSON.parse(localStorage.getItem(`${currencyElementOne.value}Data`)).rates[currencyElementTwo.value];
+async function calculate() {
+  console.log("entering calculate");
+  let now = new Date().getTime(); 
+  let calcData = await getDataFromStorage();
+  let rate = calcData.rates[currencyElementTwo.value];
   rateElement.innerText = `1 ${currencyElementOne.value} = ${rate.toFixed(4)} ${currencyElementTwo.value}`;
   amountElementTwo.value = (amountElementOne.value * rate).toFixed(2);
   let time = localStorage.getItem(`${currencyElementOne.value}Timestamp`) - delta;
-  updated.innerText = `rates updated ${(now - time)/1000} seconds ago`;
-  console.log("exiting calculate");
-}
+  if (((now - time)/1000) < 60) {
+    updated.innerText = `rates updated ${((now - time)/1000).toFixed(0)} seconds ago`
+  } else if (((now - time)/1000) < 120) {
+    updated.innerText = `rates updated 1 minute ago`
+  } else {
+    updated.innerText = `rates updated ${((now - time)/60000).toFixed(0)} minutes ago`
+  }
+};
 
 // Swap currency codes
 function swap() {
@@ -92,26 +117,32 @@ function swap() {
   currencyElementTwo.value = temp;
 }
 
+// Initialize
+renderOptionsLists();
+calculate();
+
 // Chart JS
-function getKeys() {
-  let s =  getChartDataFromStorage().rates;
+async function getKeys() {
+  let keysData = await getChartDataFromStorage();
+  let s = keysData.rates;
   let keys = [];
   let months = [];
   for(var k in s) {
-    if (k.slice(8,10) === '01' && !months.includes(k.slice(5,7))) {
-      keys.push(k);
-      months.push(k.slice(5,7));
-    } else if (k.slice(8,10) === '03' && !months.includes(k.slice(5,7))) {
-      keys.push(k);
-      months.push(k.slice(5,7));
+      if (k.slice(8,10) === '01' && !months.includes(k.slice(5,7))) {
+        keys.push(k);
+        months.push(k.slice(5,7));
+      } else if (k.slice(8,10) === '03' && !months.includes(k.slice(5,7))) {
+        keys.push(k);
+        months.push(k.slice(5,7));
+      }
     }
-  }
   return keys.sort()
-}
+  }
 
-function getValues() {
-  let s = getChartDataFromStorage().rates;
-  let keys = getKeys();
+async function getValues() {
+  let valuesData = await getChartDataFromStorage();
+  let s = valuesData.rates; 
+  let keys = await getKeys();
   let vals = [];
   for(var k in keys) {
     vals.push(s[keys[k]][currencyElementTwo.value])
@@ -119,9 +150,10 @@ function getValues() {
   return vals;
 }
 
-function addData(chart, data) {
-  chart.data.datasets[0].data = data();
+async function addData(chart, data) {
+  chart.data.datasets[0].data = await data();
   chart.data.datasets[0].label = `${currencyElementOne.value}/${currencyElementTwo.value}`;
+  chart.data.labels = await getKeys();
   chart.update();
 }
 
@@ -131,58 +163,65 @@ function removeData(chart) {
   chart.update();
 }
 
-// Initialize
-renderOptionsLists()
-calculate();
 
 var ctx = document.getElementById('myChart').getContext('2d');
 var myChart = new Chart(ctx, {
   type: 'line',
   data: {
-    labels: getKeys(),
+    labels: [],
       datasets: [{
           label: `${currencyElementOne.value}/${currencyElementTwo.value}`,
           data: [],
           backgroundColor: 'rgba(95,186,167,0)',
           borderWidth: 3,
-          borderColor: 'rgba(95,186,167,.3)'
+          borderColor: 'rgba(95,186,167,.5)'
       }]
   },
   options: {
       layout: {
         padding: {
-          right: 20,
-          left: 5,
-          top: 10,
-          bottom: 10,
+          right: 25,
+          left: 0,
+          top: 0,
+          bottom: 0,
         }
       },
       scales: {
           yAxes: [{
               borderColor: 'Red',
-              display: false,
+              display: true,
               gridLines: {
                 color: '',
-                zeroLineColor: 'Red',
-                drawTicks: false,
+                zeroLineColor: 'Lightgray',
+                drawTicks: true,
+                drawBorder: false
               },
               ticks: {
-                  beginAtZero: false
-              }
+                  beginAtZero: false,
+                  fontSize: 10,
+                  fontColor: 'Lightgray',
+              },
           }],
           xAxes: [{
-              display: false,
-              lineWidth: 0,
-              drawTicks: true,
+              display: true,
+              lineWidth: 1,
+              drawTicks: false,
               gridLines: {
                 color: '',
                 zeroLineColor: '',
                 drawBorder: false,
+                drawTicks: true
               },
               ticks: {
-                fontColor: '#d3d3d3',
+                fontColor: 'Lightgray',
                 minRotation: 90,
-              }     
+                fontSize: 10,
+                callback: function(value, index, values) {
+                  let date = new Date(value);
+                  let month = date.toLocaleString('default', {month: 'short'})
+                  return month;
+              }
+            }     
           }]
       },
     legend: {
@@ -193,15 +232,14 @@ var myChart = new Chart(ctx, {
 
 // Initialize chart
 getChartDataFromStorage()
-addData(myChart, getValues)
+addData(myChart, getValues, getKeys);
 
 // Event listeners
 currencyElementOne.addEventListener('change', () => {
   getDataFromStorage();
   calculate();
-  getChartDataFromStorage();
   removeData(myChart);
-  addData(myChart, getValues);
+  addData(myChart, getValues, getKeys);
 });
 amountElementOne.addEventListener('input', () => {
   calculate();
@@ -209,16 +247,13 @@ amountElementOne.addEventListener('input', () => {
 currencyElementTwo.addEventListener('change', () => {
   getDataFromStorage();
   calculate();
-  getChartDataFromStorage();
   removeData(myChart);
-  addData(myChart, getValues);
+  addData(myChart, getValues, getKeys);
 });
 amountElementTwo.addEventListener('input', calculate);
 swapButton.addEventListener('click', () => {
   swap();
-  getDataFromStorage()
   calculate();
-  getChartDataFromStorage();
   removeData(myChart);
-  addData(myChart, getValues);
+  addData(myChart, getValues, getKeys);
 });
