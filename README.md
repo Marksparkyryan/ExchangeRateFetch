@@ -1,6 +1,12 @@
-## Exchange Rate
+## Exchange Rate Fetch
 
-Select countries to get the exchange rate for a specific amount
+[See project here] (https://marksparkyryan.github.io/ExchangeRateFetch/)
+
+This was a project in Brad Traversy's JS course. Users can select two currencies to see the latest exchange rate. 
+
+I have added a few more features to this project beyond the original scope that I thought were needed: 
+    - Added a fun graph to display rates going back 9 months (ChartJS)
+    - Write data to local storage to minimize API calls 
 
 ## Project Specifications
 
@@ -9,3 +15,7 @@ Select countries to get the exchange rate for a specific amount
 - Display the values for both countries
 - Update values on amount change
 - Swap country rates
+
+## Credit 
+
+Brad Traversy
