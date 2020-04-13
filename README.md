@@ -19,3 +19,4 @@ I have added a few more features to this project beyond the original scope that 
 ## Credit 
 
 Brad Traversy
+Data provided by http://exchangeratesapi.io/
